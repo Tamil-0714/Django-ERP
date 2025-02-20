@@ -7,6 +7,10 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
 
 User = get_user_model()
 
@@ -71,9 +75,10 @@ def t_student(request, assign_id):
 
 @login_required()
 def t_class_date(request, assign_id):
-    now = timezone.now()
+    now = timezone.now().date()
     ass = get_object_or_404(Assign, id=assign_id)
     att_list = ass.attendanceclass_set.filter(date__lte=now).order_by('-date')
+    print("THis is attl ist : ", now)
     return render(request, 'info/t_class_date.html', {'att_list': att_list})
 
 
@@ -110,14 +115,79 @@ def edit_att(request, ass_c_id):
     return render(request, 'info/t_edit_att.html', context)
 
 
+# def send_email(recipient_email, subject, body):
+#     sender_email = "gobiathx2@gmail.com"  # Replace with your email
+#     sender_password = "dhvalylrvgroqpyv"  # Replace with your email app password
+
+#     try:
+#         # Create message
+#         msg = MIMEMultipart()
+#         msg["From"] = sender_email
+#         msg["To"] = recipient_email
+#         msg["Subject"] = subject
+
+#         # Email body
+#         msg.attach(MIMEText(body, "plain"))
+
+#         # Connect to Gmail SMTP Server
+#         server = smtplib.SMTP("smtp.gmail.com", 587)
+#         server.starttls()  # Secure the connection
+#         server.login(sender_email, sender_password)  # Login to the email account
+#         server.sendmail(sender_email, recipient_email, msg.as_string())  # Send email
+#         server.quit()
+
+#         print(f"Email sent successfully to {recipient_email}")
+
+#     except Exception as e:
+#         print(f"Error: {e}")
+
+
+def send_email(recipient_email, subject, body):
+    sender_email = "tom.jerry.07.05.06@gmail.com"  # Replace with your email
+    sender_password = "___________"  # Replace with your actual App Password
+
+    try:
+        # Create message
+        msg = MIMEMultipart()
+        msg["From"] = sender_email
+        msg["To"] = recipient_email
+        msg["Subject"] = subject
+
+        # Email body
+        msg.attach(MIMEText(body, "plain"))
+
+        # Connect to Gmail SMTP Server using SSL
+        server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
+        server.login(sender_email, sender_password)  # Login
+        server.sendmail(sender_email, recipient_email, msg.as_string())  # Send email
+        server.quit()
+
+        print(f"Email sent successfully to {recipient_email}")
+
+    except Exception as e:
+        print(f"Error: {e}")
+
 @login_required()
 def confirm(request, ass_c_id):
     assc = get_object_or_404(AttendanceClass, id=ass_c_id)
     ass = assc.assign
     cr = ass.course
     cl = ass.class_id
+    print("assc", assc)
+    print("ass", ass)
+    print("cr", cr)
+    print("cl", cl)
+# assc AttendanceClass object (6823)
+# ass Jenifer Jothi : DS : Computer Science : 3 B
+# cr Data Structures
+# cl Computer Science : 3 B
+# This is that  Gopinath
     for i, s in enumerate(cl.student_set.all()):
+        print("This is email ", s.email)
         status = request.POST[s.USN]
+        emailMessage = f'Your son/dauter {s} is absent for {ass} at this data 02 Feb 2025'
+        print(emailMessage)
+        send_email(s.email,"Absent information", emailMessage)
         if status == 'present':
             status = 'True'
         else:
